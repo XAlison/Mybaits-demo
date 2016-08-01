@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ywkj.controller.workflow.entity.Iflowmapper">
+	<!-- select语句 -->
+	<select id="selectUserByID" parameterType="int" resultType="User">
+		select * from `user` where user.id = #{id}
+	</select>
+
+	<!-- 定义的resultMap，可以解决类的属性名和数据库列名不一致的问题 -->
+	<!-- <resultMap type="User" id="userResultMap"> <id property="id" column="user_id" 
+		/> <result property="userName" column="user_userName" /> <result property="userAge" 
+		column="user_userAge" /> <result property="userAddress" column="user_userAddress" 
+		/> </resultMap> -->
+
+	<!-- 返回list的select语句，注意 resultMap的值是指向前面定义好的 -->
+	<!-- <select id="selectUsersByName" parameterType="string" resultMap="userResultMap"> 
+		select * from user where user.userName = #{userName} </select> -->
+
+	<select id="selectUsersByName" parameterType="string"
+		resultType="User">
+		select * from user where user.userName = #{userName}
+	</select>
+
+	<!--执行增加操作的SQL语句。id和parameterType分别与IUserOperation接口中的addUser方法的名字和参数类型一致。 
+		useGeneratedKeys设置为"true"表明要MyBatis获取由数据库自动生成的主键；keyProperty="id"指定把获取到的主键值注入到User的id属性 -->
+	<insert id="addUser" parameterType="User" useGeneratedKeys="true"
+		keyProperty="id">
+		insert into user(userName,userAge,userAddress)
+		values(#{userName},#{userAge},#{userAddress})
+	</insert>
+
+	<update id="updateUser" parameterType="User">
+		update user set
+		userName=#{userName},userAge=#{userAge},userAddress=#{userAddress}
+		where id=#{id}
+	</update>
+
+	<delete id="deleteUser" parameterType="int">
+		delete from user where
+		id=#{id}
+	</delete>
+
+	
+
+	<!--查询用户流程定义表 -->
+	<select id="GetCoustomDeploymentList" parameterType="int"
+		 resultType="com.ywkj.controller.workflow.entity.CoustomDeployment" >
+		select ID as id,NAME as name,DFLW_ID as dflwId,CREATE_TIME as createTime, UPDATE_TIME as updateTime  from `coustom_deployment` where
+		coustom_deployment.DFLW_ID = #{dflwId}
+	</select>
+	<!-- 插入用户自定义流程信息 -->
+	<insert id="AddCoustomDeployment"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomDeployment"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into
+		coustom_deployment(NAME,DFLW_ID,CREATE_TIME)
+		values(#{name},#{dflwId},#{createTime,jdbcType=TIME})
+	</insert>
+	<!-- 更新修改流程名称 -->
+	<update id="updateCoustomDeployment"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomDeployment">
+		update coustom_deployment set NAME=#{name} where DFLW_ID=#{dflwId}
+	</update>
+	 <!-- 插入流程节点信息 -->
+	 <insert id="AddCoustomProcessnode"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomProcessnode"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into
+		coustom_processnode(NODE_NAME,NODE_ID,ASSIGNEE,STATES,NODE_TYPE,CREATE_TIME,DFLW_ID,SUPERNODE)
+		values(#{nodeName},#{nodeId},#{assignee},#{states},#{nodeType},#{createTime,jdbcType=TIME},#{dflwId},#{supernode})
+	 </insert>
+
+	 <!-- 插入流程节点连接线信息 -->
+	 <insert id="AddCoustomSequence"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomSequence"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into
+		coustom_sequence(SEQUENCE_FLOW_ID,DFLW_ID,SEQUENCE_NAME,TARGET_NODE,SOURE_NODE,DESCRIPTION,STATUS)
+		values(#{sequenceFlowId},#{dflwId},#{sequenceName},#{targetNode},#{soureNode},#{description},#{status})
+	 </insert>
+
+    	<!-- 插入节点条件信息-->
+	 <insert id="AddCondition"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomCondition"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into
+		coustom_condition(SEQUENCE_FLOW_ID,FILED_NAME,SYSBOLS,FILED_VALUE,VAR_TYPE,STATUS,CREATE_TIME)
+		values(#{sequenceFlowId},#{filedName},#{sysbols},#{filedValue},#{varType},#{status},#{createTime,jdbcType=TIME})
+	 </insert>
+
+
+    
+
+	<!--获取条件列表 -->
+	<select id="GetCoustomCondition" parameterType="String"  resultType="com.ywkj.controller.workflow.entity.CoustomCondition">
+		select ID as id,SEQUENCE_FLOW_ID as sequenceFlowId,FILED_NAME as filedName,SYSBOLS as sysbols,FILED_VALUE as filedValue,VAR_TYPE as varType 
+		from coustom_condition 
+		where  coustom_condition.STATUS=1  and  coustom_condition.SEQUENCE_FLOW_ID = #{sequenceFlowId}
+	</select> 
+	 
+	 
+
+	<!-- 获取流程下所有的节点信息 -->
+	 <select id="GetCoustomprocessNodeByconditions" parameterType="String" resultType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+     SELECT ID  as id,NODE_NAME as nodeName,NODE_ID as nodeId,ASSIGNEE as assignee,STATES as states,NODE_TYPE  as nodeType,CREATE_TIME as createTime,DFLW_ID  as dflwId,SUPERNODE as supernode  from coustom_processnode where STATES=1 AND DFLW_ID= #{dflwId}  
+	 </select>
+	 
+	 
+	 <!-- 获取当前节点下所有与它为源的节点列表 -->
+	 <select id ="GetCoustomprocessNodeParentchidNode" parameterType="String" resultType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+	     SELECT ID  as id,NODE_NAME as nodeName,NODE_ID as nodeId,ASSIGNEE as assignee,STATES as states,NODE_TYPE  as nodeType,CREATE_TIME as createTime,DFLW_ID  as dflwId,SUPERNODE as supernode  
+	      from coustom_processnode  
+	      where  STATES=1 AND  DFLW_ID= #{dflwId}   
+	      And  NODE_ID  IN  (SELECT  TARGET_NODE  from coustom_sequence   where SOURE_NODE=#{nodeId} )
+	 </select>
+	
+	<!-- 查询当前节点下的所有子节点列表 -->
+	<select id="GetCoustomprocessNodeChildNode" parameterType="String" resultType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+     SELECT ID  as id,NODE_NAME as nodeName,NODE_ID as nodeId,ASSIGNEE as assignee,STATES as states,NODE_TYPE  as nodeType,CREATE_TIME as createTime,DFLW_ID  as dflwId,SUPERNODE as supernode   FROM coustom_processnode    WHERE DFLW_ID=#{dflwId}  AND SUPERNODE =#{supernode}
+	</select>
+    
+    
+    
+    <select id="GetCoustomSequenceflow"  parameterType="String"   resultType="com.ywkj.controller.workflow.entity.CoustomSequence">
+    SELECT *  FROM  coustom_sequence  WHERE TARGET_NODE='sid-5-6ED6EB7B-3A28-C91A-2CF3-F957C9E0D6EC'  AND SOURE_NODE='sid-4-CFE6757F-AA55-B42E-100E-6EB6168A124C'
+    </select>
+    
+    
+    
+    
+   <!--删除条件 -->
+    <update id="UpdateCoustomCondition" parameterType="com.ywkj.controller.workflow.entity.CoustomCondition">
+		update coustom_condition set
+	    STATUS=#{status}
+		where id=#{id}
+	</update>
+	
+	 <!--删除条件 -->
+    <update id="UpdateCoustomprocessNode" parameterType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+		update coustom_processnode set
+	    STATES=#{states}
+		where NODE_ID=#{nodeId}
+	</update>
+	
+	
+	
+    <update id="updateSequenceflowAndNodeA"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomSequence">
+		UPDATE coustom_sequence  SET STATUS=#{status}  WHERE TARGET_NODE=#{targetNode}  AND  DFLW_ID=#{dflwId};
+ 	</update> 
+	 <update id="updateSequenceflowAndNodeB"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomSequence">
+	     UPDATE coustom_processnode  SET STATES=#{status} WHERE  DFLW_ID=#{dflwId}    AND  NODE_ID=#{targetNode};
+	</update> 
+	
+	<select id="GetSequenceflowid"  parameterType="String"   resultType="com.ywkj.controller.workflow.entity.CoustomSequence">
+     SELECT *  from  coustom_sequence   where  STATUS=true  AND TARGET_NODE=#{targetNode}   AND  DFLW_ID=#{dflwId} 
+	</select>
+	
+	
+	 <!--通过节点id修改节点名称 -->
+    <update id="UpdateNodeName" parameterType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+		update coustom_processnode set
+	    	  NODE_NAME=#{nodeName} 
+		where NODE_ID=#{nodeId}
+	</update>
+	
+	
+	
+	
+	<!--条件设定删除开始 -->
+	<!-- 获取源节点 -->
+	<select id="GetflowsoureNode"  parameterType="String"   resultType="com.ywkj.controller.workflow.entity.CoustomSequence">
+	      SELECT SEQUENCE_FLOW_ID as sequenceFlowId,DFLW_ID as dflwId,SEQUENCE_NAME as sequenceName,TARGET_NODE as targetNode,SOURE_NODE as soureNode,DESCRIPTION as description  from  coustom_sequence   where  STATUS=true  AND TARGET_NODE=#{targetNode}   AND  DFLW_ID=#{dflwId}  
+	</select>
+	<!-- 获取目标节点 -->
+	<select id="GetflowTargetNode"  parameterType="String"   resultType="com.ywkj.controller.workflow.entity.CoustomSequence">
+	      SELECT SEQUENCE_FLOW_ID as sequenceFlowId,DFLW_ID as dflwId,SEQUENCE_NAME as sequenceName,TARGET_NODE as targetNode,SOURE_NODE as soureNode,DESCRIPTION as description  from  coustom_sequence   where  STATUS=true  AND SOURE_NODE=#{soureNode}   AND  DFLW_ID=#{dflwId}  
+	</select>
+     <!-- 递归删除连接线与节点之间关系 start-->
+	<update id="DupdatesequenceNodeaction"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomSequence">
+		UPDATE coustom_sequence  SET STATUS=false  WHERE  TARGET_NODE=#{targetNode} AND SOURE_NODE=#{soureNode} AND  DFLW_ID=#{dflwId};
+ 	</update> 
+	 <update id="DupdateprocessnodeNodeaction"
+		parameterType="com.ywkj.controller.workflow.entity.CoustomSequence">
+	     UPDATE coustom_processnode  SET  STATES=false  WHERE   DFLW_ID=#{dflwId}   AND  NODE_ID=#{targetNode};
+	</update> 
+	<!--递归删除连接线与节点之间关系 end-->
+    <!-- 条件设定删除结束 -->
+    
+    <!-- 读取当前节点的下一级节点 -->
+	<select id="GetFlowDataByParentID"   parameterType="java.util.HashMap" resultType="com.ywkj.controller.workflow.entity.CoustomSequence">
+		select TARGET_NODE as targetNode from coustom_sequence where
+		SOURE_NODE   in   ${numberLst}
+	</select>
+	
+    	 <!--获取流程的第一个节点信息 -->
+	  <select id ="GetFlowProcessModel" parameterType="String" resultType="com.ywkj.controller.workflow.entity.ProcessModel">
+SELECT t1.ID as id, t1.ASSIGNEE as assignee,t1.NODE_ID  as nodeid ,t1.NODE_NAME as nodename ,
+t2.DFLW_ID as dflwid,t2.NAME  as flowname , t3.SEQUENCE_FLOW_ID as sequenceflowid ,
+t3.SEQUENCE_NAME as sequencename,t3.TARGET_NODE as targetnode ,t3.SOURE_NODE  as sourenode 
+from coustom_processnode t1  LEFT JOIN  coustom_deployment t2    ON   t1.DFLW_ID=t2.DFLW_ID  
+LEFT JOIN  coustom_sequence   t3  on   t3.TARGET_NODE=t1.NODE_ID  
+where t1.DFLW_ID=#{dflwId}  and  t1.STATES=true  and t3.STATUS=TRUE  ORDER BY  t1.ID   
+	 </select>
+    
+    
+    
+    
+    
+     <!--获取流程的第一个节点信息 -->
+	   <select id ="GetFirstProcessNode" parameterType="String" resultType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+	     SELECT ID  as id,NODE_NAME as nodeName, OPERATION_NAME as operationName,NODE_ID as nodeId,ASSIGNEE as assignee,STATES as states,NODE_TYPE  as nodeType,CREATE_TIME as createTime,DFLW_ID  as dflwId,SUPERNODE as supernode  
+	      from coustom_processnode  
+	      where  STATES=1 AND  DFLW_ID= #{dflwId}   AND  SUPERNODE=#{suerNode}
+	 </select>
+	 
+	 <!-- 获取连接系信息 -->
+	 <select id="GetAllsequenceflow"  parameterType="String"   resultType="com.ywkj.controller.workflow.entity.CoustomSequence">
+	      SELECT SEQUENCE_FLOW_ID as sequenceFlowId,DFLW_ID as dflwId,SEQUENCE_NAME as sequenceName,TARGET_NODE as targetNode,SOURE_NODE as soureNode,DESCRIPTION as description  from  coustom_sequence   where  STATUS=true  AND SOURE_NODE=#{soureNode}   AND  DFLW_ID=#{dflwId}  
+	</select>
+	 
+    <!-- 通过节点id获取对应的节点信息 -->
+	<select id="GetnowNode" parameterType="String" resultType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+     SELECT ID  as id,NODE_NAME as nodeName,NODE_ID as nodeId,ASSIGNEE as assignee,STATES as states,NODE_TYPE  as nodeType,CREATE_TIME as createTime,DFLW_ID  as dflwId,SUPERNODE as supernode   FROM coustom_processnode    WHERE DFLW_ID=#{dflwId}  AND NODE_ID =#{nodeId}
+	</select>
+	  <!-- 检查当前流程是否存在多个目标节点 -->
+	<select  id="CheckTargetNodeCount" parameterType="String"  resultType="java.lang.String">
+		SELECT COUNT(SOURE_NODE) AS TotalTargetNode from coustom_sequence   where DFLW_ID=#{dflwId}
+		And `STATUS`=TRUE  GROUP BY  SOURE_NODE  HAVING (COUNT(SOURE_NODE)>1)
+	</select>
+    
+    <!-- 获取最后一个节点，只有当前流程为直线流程的时候才符合此情况，其余单独处理 -->
+    <select id="GetlastProcessNode"  parameterType="String"  resultType="java.lang.String">
+    SELECT MAX(TARGET_NODE) as lastTargetNode from coustom_sequence   where DFLW_ID=#{dflwId}
+		And STATUS=TRUE  
+</select>
+
+	<!-- 查询当前节点下的所有子节点列表 -->
+	<select id="GetAllCoustomprocessNode" parameterType="String" resultType="com.ywkj.controller.workflow.entity.CoustomProcessnode">
+     SELECT ID  as id,NODE_NAME as nodeName,NODE_ID as nodeId,ASSIGNEE as assignee,STATES as states,NODE_TYPE  as nodeType,CREATE_TIME as createTime,DFLW_ID  as dflwId,SUPERNODE as supernode   FROM coustom_processnode    WHERE DFLW_ID=#{Flow_ID}   and states=1
+	</select>
+	
+	
+		
+	<!-- 查询执行条件 -->
+	<select id="GetAllNodeActrulval" parameterType="String" resultType="com.ywkj.controller.workflow.entity.Actrulval">
+SELECT  ID AS id, Name as filedname , value as fildValue , PROC_INST_ID as procinstanceId from  act_ru_var  where  PROC_INST_ID=#{procinstanceId}
+	</select>
+	
+	
+	
+	
+	 <!-- 获取连接系信息 -->
+	 <select id="GettargetData"  parameterType="String"    resultType="java.util.HashMap">
+	      SELECT *  from  ${tablename} 
+	</select>
+	 
+	 
+	 
+	 
+	 <!-- 查询执行条件 -->
+	<select id="GetTableInformation" parameterType="String" resultType="com.demo.test.TableInformation">
+   select  t1.TABLE_NAME,t1.COLUMN_NAME, t1.ORDINAL_POSITION,t1.IS_NULLABLE ,t1.DATA_TYPE ,t1.CHARACTER_MAXIMUM_LENGTH ,t1.COLUMN_COMMENT,t1.COLUMN_KEY     from information_schema.columns   as  t1  where table_schema ='numysql'  and table_name = #{tablename};
+	</select>
+	
+	
+	 <insert id="batchUpdate" parameterType="java.util.List"  >
+	      INSERT INTO
+	    <foreach collection="list" item="list" index="index" open="begin" close=";end;" separator=";">  
+          ${list}       
+       </foreach >  
+		 
+    </insert>
+    
+    
+    	<!-- 获取流程表单条件-->
+	 <select id="GetConditionalValue"  parameterType="String"    resultType="java.util.HashMap">
+	      SELECT *  from    ${tablename}  where  Flow_ID=#{ProcessInstanceId}
+	</select>
+	
+	    	<!-- 获取设置条件的字段-->
+	 <select id="GetConditionalValuefiled"  parameterType="String"    resultType="java.lang.String">
+	    	SELECT FILED_NAME FROM coustom_condition  WHERE  SEQUENCE_FLOW_ID IN (  SELECT SEQUENCE_FLOW_ID FROM coustom_sequence  WHERE  DFLW_ID=#{flowkey} )
+       GROUP BY  FILED_NAME
+	</select>
+	
+
+</mapper>
